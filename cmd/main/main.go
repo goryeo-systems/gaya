@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/adshao/go-binance/v2"
@@ -10,10 +9,8 @@ import (
 	"github.com/goryeo-systems/gaya/pkg/util"
 )
 
-var log = util.GetLogger()
-
 func tickerEventHandler(event *binanceapi.TickerEvent) {
-	log.Info("event", "event", event)
+	util.Log.Info("event", "event", event)
 }
 
 func main() {
@@ -21,11 +18,13 @@ func main() {
 
 	prices, err := client.NewListPricesService().Do(context.Background())
 	if err != nil {
-		fmt.Println(err)
+		util.LogError(err)
+
 		return
 	}
+
 	for _, p := range prices {
-		fmt.Println(p)
+		util.Log.Info("price", "price", p)
 	}
 
 	err = binanceapi.TickerStream(&binanceapi.CurrencyPair{Base: "BTC", Quote: "USDT"}, tickerEventHandler, util.LogError)
@@ -33,8 +32,5 @@ func main() {
 		util.Check(err)
 	}
 	// remove this if you do not want to be blocked here
-	time.Sleep(5 * time.Second)
-	//<-doneChan
-
-	println("Hello, Gaya!")
+	time.Sleep(5 * time.Second) //nolint:all
 }

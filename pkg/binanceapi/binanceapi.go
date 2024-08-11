@@ -37,6 +37,7 @@ func currencyPairToBinanceSymbol(currencyPair *CurrencyPair) (string, error) {
 	if currencyPair.Base == "BTC" && currencyPair.Quote == "USDT" {
 		return "BTCUSDT", nil
 	}
+
 	return "", fmt.Errorf("unsupported currency pair: %v", currencyPair)
 }
 
@@ -83,12 +84,14 @@ func TickerStream(currencyPair *CurrencyPair, handler TickerStreamHandler, errHa
 	if err != nil {
 		return err
 	}
+
 	_, _, err = binance.WsBookTickerServe(
 		symbol,
 		func(event *binance.WsBookTickerEvent) {
 			tickerEvent, err := toTickerEvent(event)
 			if err != nil {
 				util.LogError(err)
+
 				return
 			}
 
@@ -98,5 +101,6 @@ func TickerStream(currencyPair *CurrencyPair, handler TickerStreamHandler, errHa
 			errHandler(err)
 		},
 	)
+
 	return err
 }
