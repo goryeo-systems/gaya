@@ -28,7 +28,7 @@ func main() {
 		fmt.Println(p)
 	}
 
-	err = binanceapi.TickerStream("BTCUSDT", tickerEventHandler, util.LogError)
+	err = binanceapi.TickerStream(&binanceapi.CurrencyPair{Base: "BTC", Quote: "USDT"}, tickerEventHandler, util.LogError)
 	if err != nil {
 		util.Check(err)
 	}
