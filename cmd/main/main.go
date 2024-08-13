@@ -6,10 +6,11 @@ import (
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/goryeo-systems/gaya/pkg/binanceapi"
+	"github.com/goryeo-systems/gaya/pkg/exchangeclient"
 	"github.com/goryeo-systems/gaya/pkg/util"
 )
 
-func tickerEventHandler(event *binanceapi.TickerEvent) {
+func tickerEventHandler(event *exchangeclient.TickerEvent) {
 	util.Log.Info("event", "event", event)
 }
 
@@ -24,18 +25,21 @@ func main() {
 	}
 
 	c := binanceapi.New()
+
 	w, err := c.GetWallet()
 	if err != nil {
 		util.LogError(err)
+
 		return
 	}
+
 	util.Log.Info("wallet", "wallet", w)
 
 	for _, p := range prices {
 		util.Log.Info("price", "price", p)
 	}
 
-	err = binanceapi.TickerStream(&binanceapi.CurrencyPair{Base: "BTC", Quote: "USDT"}, tickerEventHandler, util.LogError)
+	err = c.TickerStream(&exchangeclient.CurrencyPair{Base: "BTC", Quote: "USDT"}, tickerEventHandler, util.LogError)
 	if err != nil {
 		util.Check(err)
 	}

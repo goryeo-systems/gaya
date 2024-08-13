@@ -7,26 +7,14 @@ import (
 	"os"
 
 	"github.com/adshao/go-binance/v2"
+	"github.com/goryeo-systems/gaya/pkg/exchangeclient"
 	"github.com/goryeo-systems/gaya/pkg/util"
 )
 
-type CurrencyPair struct {
-	Base  string
-	Quote string
-}
-
-type TickerEvent struct {
-	CurrencyPair *CurrencyPair
-	BestBidPrice *big.Float
-	BestBidQty   *big.Float
-	BestAskPrice *big.Float
-	BestAskQty   *big.Float
-}
-
-func binanceSymbolToCurrencyPair(symbol string) (*CurrencyPair, error) {
+func binanceSymbolToCurrencyPair(symbol string) (*exchangeclient.CurrencyPair, error) {
 	switch symbol {
 	case "BTCUSDT":
-		return &CurrencyPair{
+		return &exchangeclient.CurrencyPair{
 			Base:  "BTC",
 			Quote: "USDT",
 		}, nil
@@ -35,7 +23,7 @@ func binanceSymbolToCurrencyPair(symbol string) (*CurrencyPair, error) {
 	}
 }
 
-func currencyPairToBinanceSymbol(currencyPair *CurrencyPair) (string, error) {
+func currencyPairToBinanceSymbol(currencyPair *exchangeclient.CurrencyPair) (string, error) {
 	if currencyPair.Base == "BTC" && currencyPair.Quote == "USDT" {
 		return "BTCUSDT", nil
 	}
@@ -43,7 +31,7 @@ func currencyPairToBinanceSymbol(currencyPair *CurrencyPair) (string, error) {
 	return "", fmt.Errorf("unsupported currency pair: %v", currencyPair)
 }
 
-func toTickerEvent(event *binance.WsBookTickerEvent) (*TickerEvent, error) {
+func toTickerEvent(event *binance.WsBookTickerEvent) (*exchangeclient.TickerEvent, error) {
 	currencyPair, err := binanceSymbolToCurrencyPair(event.Symbol)
 	if err != nil {
 		return nil, err
@@ -69,7 +57,7 @@ func toTickerEvent(event *binance.WsBookTickerEvent) (*TickerEvent, error) {
 		return nil, err
 	}
 
-	return &TickerEvent{
+	return &exchangeclient.TickerEvent{
 		CurrencyPair: currencyPair,
 		BestBidPrice: bestBidPrice,
 		BestBidQty:   bestBidQty,
@@ -78,11 +66,12 @@ func toTickerEvent(event *binance.WsBookTickerEvent) (*TickerEvent, error) {
 	}, nil
 }
 
-type TickerStreamHandler func(event *TickerEvent)
-type ErrHandler func(err error)
-
 // TickerStream subscribes to the ticker stream for the given currency pair.
-func TickerStream(currencyPair *CurrencyPair, handler TickerStreamHandler, errHandler ErrHandler) error {
+func (c *BinanceClient) TickerStream(
+	currencyPair *exchangeclient.CurrencyPair,
+	handler exchangeclient.TickerStreamHandler,
+	errHandler exchangeclient.ErrHandler,
+) error {
 	symbol, err := currencyPairToBinanceSymbol(currencyPair)
 	if err != nil {
 		return err
@@ -112,10 +101,6 @@ type BinanceClient struct {
 	client *binance.Client
 }
 
-type Wallet struct {
-	Available map[string]*big.Float
-}
-
 // New creates a new Binance client.
 func New() *BinanceClient {
 	apiKey := os.Getenv("BINANCE_API_KEY")
@@ -126,16 +111,16 @@ func New() *BinanceClient {
 	}
 }
 
-var zeroBigFloat = big.NewFloat(0)
+var zeroBigFloat = big.NewFloat(0) //nolint:gochecknoglobals
 
 // GetWallet returns the wallet of the user.
-func (c *BinanceClient) GetWallet() (*Wallet, error) {
+func (c *BinanceClient) GetWallet() (*exchangeclient.Wallet, error) {
 	account, err := c.client.NewGetAccountService().Do(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	wallet := &Wallet{
+	wallet := &exchangeclient.Wallet{
 		Available: make(map[string]*big.Float),
 	}
 
