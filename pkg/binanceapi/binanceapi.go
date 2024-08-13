@@ -1,8 +1,10 @@
 package binanceapi
 
 import (
+	"context"
 	"fmt"
 	"math/big"
+	"os"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/goryeo-systems/gaya/pkg/util"
@@ -79,6 +81,7 @@ func toTickerEvent(event *binance.WsBookTickerEvent) (*TickerEvent, error) {
 type TickerStreamHandler func(event *TickerEvent)
 type ErrHandler func(err error)
 
+// TickerStream subscribes to the ticker stream for the given currency pair.
 func TickerStream(currencyPair *CurrencyPair, handler TickerStreamHandler, errHandler ErrHandler) error {
 	symbol, err := currencyPairToBinanceSymbol(currencyPair)
 	if err != nil {
@@ -90,7 +93,7 @@ func TickerStream(currencyPair *CurrencyPair, handler TickerStreamHandler, errHa
 		func(event *binance.WsBookTickerEvent) {
 			tickerEvent, err := toTickerEvent(event)
 			if err != nil {
-				util.LogError(err)
+				errHandler(err)
 
 				return
 			}
@@ -103,4 +106,51 @@ func TickerStream(currencyPair *CurrencyPair, handler TickerStreamHandler, errHa
 	)
 
 	return err
+}
+
+type BinanceClient struct {
+	client *binance.Client
+}
+
+type Wallet struct {
+	Available map[string]*big.Float
+}
+
+// New creates a new Binance client.
+func New() *BinanceClient {
+	apiKey := os.Getenv("BINANCE_API_KEY")
+	secretKey := os.Getenv("BINANCE_SECRET_KEY")
+
+	return &BinanceClient{
+		client: binance.NewClient(apiKey, secretKey),
+	}
+}
+
+var zeroBigFloat = big.NewFloat(0)
+
+// GetWallet returns the wallet of the user.
+func (c *BinanceClient) GetWallet() (*Wallet, error) {
+	account, err := c.client.NewGetAccountService().Do(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	wallet := &Wallet{
+		Available: make(map[string]*big.Float),
+	}
+
+	for _, balance := range account.Balances {
+		available, err := util.StringToBigFloat(balance.Free)
+		if err != nil {
+			return nil, err
+		}
+
+		if available.Cmp(zeroBigFloat) == 0 {
+			continue
+		}
+
+		wallet.Available[balance.Asset] = available
+	}
+
+	return wallet, nil
 }

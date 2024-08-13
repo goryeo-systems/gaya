@@ -23,6 +23,14 @@ func main() {
 		return
 	}
 
+	c := binanceapi.New()
+	w, err := c.GetWallet()
+	if err != nil {
+		util.LogError(err)
+		return
+	}
+	util.Log.Info("wallet", "wallet", w)
+
 	for _, p := range prices {
 		util.Log.Info("price", "price", p)
 	}
