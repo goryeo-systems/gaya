@@ -1,6 +1,7 @@
 package deribitapi
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/frankrap/deribit-api"
@@ -19,7 +20,6 @@ func New() *DeribitClient {
 		ApiKey:        os.Getenv("DERIBIT_API_KEY"),
 		SecretKey:     os.Getenv("DERIBIT_SECRET_KEY"),
 		AutoReconnect: true,
-		DebugMode:     true,
 	}
 
 	return &DeribitClient{
@@ -40,26 +40,39 @@ func toTickerEvent(event *models.TickerNotification) (*exchangeclient.TickerEven
 	}, nil
 }
 
+func symbolToStream(s exchangeclient.Symbol) (string, error) {
+	switch s {
+	case exchangeclient.BtcPerpetual:
+		return "ticker.BTC-PERPETUAL.raw", nil
+	default:
+		return "", fmt.Errorf("unsupported symbol: %v", s)
+	}
+}
+
 func (c *DeribitClient) TickerStream(
 	s exchangeclient.Symbol,
 	handler exchangeclient.TickerStreamHandler,
 	errHandler exchangeclient.ErrHandler,
 ) error {
-	// TODO: s to stream
+	stream, err := symbolToStream(s)
+	if err != nil {
+		return err
+	}
 
-	c.client.On("ticker.BTC-PERPETUAL.raw", func(e *models.TickerNotification) {
-		tickerEvent, err := toTickerEvent(e)
-		if err != nil {
-			errHandler(err)
-
-			return
+	c.client.On(stream, func(e *models.TickerNotification) {
+		tickerEvent := &exchangeclient.TickerEvent{
+			Symbol:       s,
+			BestBidPrice: util.FloatToBigFloat(e.BestBidPrice),
+			BestBidQty:   util.FloatToBigFloat(e.BestBidAmount),
+			BestAskPrice: util.FloatToBigFloat(e.BestAskPrice),
+			BestAskQty:   util.FloatToBigFloat(e.BestAskAmount),
 		}
 
 		handler(tickerEvent)
 	})
 
 	c.client.Subscribe([]string{
-		"ticker.BTC-PERPETUAL.raw",
+		stream,
 	})
 
 	return nil
