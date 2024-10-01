@@ -11,28 +11,26 @@ import (
 	"github.com/goryeo-systems/gaya/pkg/util"
 )
 
-func binanceSymbolToCurrencyPair(symbol string) (*exchangeclient.CurrencyPair, error) {
+func toNormalizedSymbol(symbol string) (exchangeclient.Symbol, error) {
 	switch symbol {
 	case "BTCUSDT":
-		return &exchangeclient.CurrencyPair{
-			Base:  "BTC",
-			Quote: "USDT",
-		}, nil
+		return exchangeclient.BtcUsdt, nil
 	default:
-		return nil, fmt.Errorf("unsupported symbol: %s", symbol)
+		return exchangeclient.ErrSymbol, fmt.Errorf("unsupported symbol: %s", symbol)
 	}
 }
 
-func currencyPairToBinanceSymbol(currencyPair *exchangeclient.CurrencyPair) (string, error) {
-	if currencyPair.Base == "BTC" && currencyPair.Quote == "USDT" {
+func toBinanceSymbol(symbol exchangeclient.Symbol) (string, error) {
+	switch symbol {
+	case exchangeclient.BtcUsdt:
 		return "BTCUSDT", nil
+	default:
+		return "", fmt.Errorf("unsupported symbol: %v", symbol)
 	}
-
-	return "", fmt.Errorf("unsupported currency pair: %v", currencyPair)
 }
 
 func toTickerEvent(event *binance.WsBookTickerEvent) (*exchangeclient.TickerEvent, error) {
-	currencyPair, err := binanceSymbolToCurrencyPair(event.Symbol)
+	symbol, err := toNormalizedSymbol(event.Symbol)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +56,7 @@ func toTickerEvent(event *binance.WsBookTickerEvent) (*exchangeclient.TickerEven
 	}
 
 	return &exchangeclient.TickerEvent{
-		CurrencyPair: currencyPair,
+		Symbol:       symbol,
 		BestBidPrice: bestBidPrice,
 		BestBidQty:   bestBidQty,
 		BestAskPrice: bestAskPrice,
@@ -68,11 +66,11 @@ func toTickerEvent(event *binance.WsBookTickerEvent) (*exchangeclient.TickerEven
 
 // TickerStream subscribes to the ticker stream for the given currency pair.
 func (c *BinanceClient) TickerStream(
-	currencyPair *exchangeclient.CurrencyPair,
+	s exchangeclient.Symbol,
 	handler exchangeclient.TickerStreamHandler,
 	errHandler exchangeclient.ErrHandler,
 ) error {
-	symbol, err := currencyPairToBinanceSymbol(currencyPair)
+	symbol, err := toBinanceSymbol(s)
 	if err != nil {
 		return err
 	}

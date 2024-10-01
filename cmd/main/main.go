@@ -44,7 +44,7 @@ func main() {
 
 	util.Log.Info("wallet", "wallet", w)
 
-	err = c.TickerStream(&exchangeclient.CurrencyPair{Base: "BTC", Quote: "USDT"}, tickerEventHandler, util.LogError)
+	err = c.TickerStream(exchangeclient.BtcUsdt, tickerEventHandler, util.LogError)
 	if err != nil {
 		util.Check(err)
 	}
