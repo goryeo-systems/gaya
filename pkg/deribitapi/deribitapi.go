@@ -82,22 +82,3 @@ func (c *DeribitClient) GetWallet() (*exchangeclient.Wallet, error) {
 	// TODO: implement this
 	return nil, nil
 }
-
-/*
-	cfg := &deribit.Configuration{
-		Addr:          deribit.RealBaseURL,
-		ApiKey:        os.Getenv("DERIBIT_API_KEY"),
-		SecretKey:     os.Getenv("DERIBIT_SECRET_KEY"),
-		AutoReconnect: true,
-		DebugMode:     true,
-	}
-	client := deribit.New(cfg)
-
-	client.On("ticker.BTC-PERPETUAL.raw", func(e *models.TickerNotification) {
-		util.Log.Info("DERIBIT", "event", e)
-	})
-
-	client.Subscribe([]string{
-		"ticker.BTC-PERPETUAL.raw",
-	})
-*/
