@@ -1,8 +1,11 @@
 package main
 
 import (
+	"os"
 	"time"
 
+	"github.com/frankrap/deribit-api"
+	"github.com/frankrap/deribit-api/models"
 	"github.com/goryeo-systems/gaya/pkg/binanceapi"
 	"github.com/goryeo-systems/gaya/pkg/exchangeclient"
 	"github.com/goryeo-systems/gaya/pkg/util"
@@ -13,6 +16,26 @@ func tickerEventHandler(event *exchangeclient.TickerEvent) {
 }
 
 func main() {
+	cfg := &deribit.Configuration{
+		Addr:          deribit.RealBaseURL,
+		ApiKey:        os.Getenv("DERIBIT_API_KEY"),
+		SecretKey:     os.Getenv("DERIBIT_SECRET_KEY"),
+		AutoReconnect: true,
+		DebugMode:     true,
+	}
+	client := deribit.New(cfg)
+
+	client.On("ticker.BTC-PERPETUAL.raw", func(e *models.TickerNotification) {
+		util.Log.Info("event", "event", e)
+	})
+
+	client.Subscribe([]string{
+		"ticker.BTC-PERPETUAL.raw",
+	})
+
+	time.Sleep(10 * time.Second) //nolint:all
+	return
+
 	c := binanceapi.New()
 
 	w, err := c.GetWallet()
