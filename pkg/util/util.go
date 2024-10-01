@@ -36,3 +36,7 @@ func StringToBigFloat(s string) (*big.Float, error) {
 
 	return nil, fmt.Errorf("failed to convert string to big.Float: %s", s)
 }
+
+func FloatToBigFloat(f float64) *big.Float {
+	return new(big.Float).SetFloat64(f)
+}
