@@ -12,7 +12,7 @@ import (
 )
 
 func tickerEventHandler(event *exchangeclient.TickerEvent) {
-	util.Log.Info("event", "event", event)
+	util.Log.Info("BINANCE", "event", event)
 }
 
 func main() {
@@ -26,15 +26,12 @@ func main() {
 	client := deribit.New(cfg)
 
 	client.On("ticker.BTC-PERPETUAL.raw", func(e *models.TickerNotification) {
-		util.Log.Info("event", "event", e)
+		util.Log.Info("DERIBIT", "event", e)
 	})
 
 	client.Subscribe([]string{
 		"ticker.BTC-PERPETUAL.raw",
 	})
-
-	time.Sleep(10 * time.Second) //nolint:all
-	return
 
 	c := binanceapi.New()
 
